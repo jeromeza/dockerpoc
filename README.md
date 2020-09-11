@@ -1,4 +1,4 @@
-Giving devs the power to deploy their own sites - automagikally!
+# Giving devs the power to deploy their own sites - automagikally!
 
 Devs before automated site deployments:  
 ![Semantic description of image](https://github.com/jeromeza/dockerpoc/blob/master/skeletor.gif "ARGGHHHHHH")
