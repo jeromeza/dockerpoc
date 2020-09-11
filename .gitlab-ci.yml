@@ -1,0 +1,26 @@
+image: docker:latest
+
+deploy:
+  script:
+  # CREATE NGINX-PROXY AND NETWORK NEEDED
+  - echo "---- CREATE NGINX-PROXY AND DOCKER NETWORKS NEEDED ----"
+  - docker network create nginx-proxy || echo true
+  - docker run -d -p 81:80 --name nginx-proxy --net nginx-proxy -v /var/run/docker.sock:/tmp/docker.sock jwilder/nginx-proxy || echo true
+  # DEPLOY SITE CODE VIA GIT
+  - echo "---- PULL SITE CODE VIA GIT ----"
+  - apk add git
+  - git clone $REPO $FQDN
+  # REMOVE OLD CONTAINER + RUN SITE CONTAINER WITH RELEVANT SITE DATA ACCESSIBLE
+  - echo "---- REMOVE OLD CONTAINER + RUN NEW SITE CONTAINER ----"
+  - docker rm -f $FQDN || echo true
+  - docker run -d --name $FQDN --expose 80 --net nginx-proxy -e VIRTUAL_HOST=$FQDN $IMAGE
+  - cd $FQDN
+  - docker cp . $FQDN:$CONPATH
+  # ENABLE APACHE2 .HTACCESS REWRITE RULES AND RESTART APACHE2
+  - docker exec $FQDN sh -c "echo RewriteEngine On >> /opt/docker/etc/httpd/vhost.conf"
+  - docker exec $FQDN sh -c "service apache2 restart"
+  variables:
+    DOCKER_HOST: tcp://192.168.2.9:2375
+    CONPATH: "/app"
+
+# gitlab runner (Ubuntu 20.04 LTS) --> creates docker middleman (for tooling / image deployment) (image: docker:latest) --> git clone of site repo on middleman --> create site container from docker middleman via docker socket to docker host --> copy git repo from middleman to site container via docker cp
